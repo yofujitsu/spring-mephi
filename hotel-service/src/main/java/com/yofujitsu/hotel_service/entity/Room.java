@@ -41,10 +41,12 @@ public class Room {
     @Column(nullable = false)
     private Integer number;
 
+    @Builder.Default
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private AvailableStatus available = AvailableStatus.AVAILABLE;
 
+    @Builder.Default
     @Column(name = "times_booked", nullable = false)
     private Integer timesBooked = 0;
 

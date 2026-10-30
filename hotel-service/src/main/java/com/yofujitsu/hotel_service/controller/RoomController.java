@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -35,6 +36,7 @@ public class RoomController {
     private final RoomLockService roomLockService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public List<RoomDto> getAvailableRooms(
             @RequestParam(required = false) UUID hotelId,
             Sort sort) {
@@ -42,27 +44,32 @@ public class RoomController {
     }
 
     @GetMapping("/recommend")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public List<RoomDto> getRecommendedRooms() {
         return roomService.getRecommendedRooms();
     }
 
     @GetMapping("/stats")
+    @PreAuthorize("hasRole('ADMIN')")
     public List<RoomStatsDto> getStats(Sort sort) {
         return roomService.getStats(sort);
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public RoomDto getRoom(@PathVariable UUID id) {
         return roomService.getRoom(id);
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public RoomDto createRoom(@Valid @RequestBody RoomCreateDto roomCreateDto) {
         return roomService.createRoom(roomCreateDto);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public RoomDto updateRoom(
             @PathVariable UUID id,
             @Valid @RequestBody RoomUpdateDto roomUpdateDto) {
@@ -70,12 +77,14 @@ public class RoomController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteRoom(@PathVariable UUID id) {
         roomService.deleteRoom(id);
     }
 
     @PostMapping("/{id}/confirm-availability")
+    @PreAuthorize("isAuthenticated()")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void confirmAvailability(
             @PathVariable UUID id,
@@ -84,6 +93,7 @@ public class RoomController {
     }
 
     @PostMapping("/{id}/release")
+    @PreAuthorize("isAuthenticated()")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void release(
             @PathVariable UUID id,

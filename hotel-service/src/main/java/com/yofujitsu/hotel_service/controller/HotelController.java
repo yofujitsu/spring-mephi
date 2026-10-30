@@ -9,6 +9,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -31,6 +32,7 @@ public class HotelController {
     private final HotelService hotelService;
 
     @GetMapping
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public List<HotelDto> getHotels(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String address,
@@ -39,22 +41,26 @@ public class HotelController {
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAnyRole('USER', 'ADMIN')")
     public HotelDto getHotel(@PathVariable UUID id) {
         return hotelService.getHotel(id);
     }
 
     @GetMapping("/{id}/stats")
+    @PreAuthorize("hasRole('ADMIN')")
     public HotelStatsDto getHotelStats(@PathVariable UUID id) {
         return hotelService.getStats(id);
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.CREATED)
     public HotelDto createHotel(@Valid @RequestBody HotelCreateDto hotelCreateDto) {
         return hotelService.createHotel(hotelCreateDto);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     public HotelDto updateHotel(
             @PathVariable UUID id,
             @Valid @RequestBody HotelUpdateDto hotelUpdateDto) {
@@ -62,6 +68,7 @@ public class HotelController {
     }
 
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void deleteHotel(@PathVariable UUID id) {
         hotelService.deleteHotel(id);

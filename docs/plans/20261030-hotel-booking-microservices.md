@@ -7,6 +7,27 @@
 - Что нужно сделать: `.../block@a20379c6182547c7ada9476946dbc039`
 - Сдача проекта: `.../block@8433a3c35fa449e9a1dc070d2a7aa838`
 
+## Прогресс
+
+- [x] Этап 0. Сборка, версии, структура — Boot 3.5.16 + Cloud 2025.0.3, Java 21,
+      MapStruct-интерфейсы, `mvn package` зелёный.
+- [x] Этап 1. hotel-service: CRUD, статистика, recommend, room_locks,
+      confirm/release (идемпотентность, пессимистичная блокировка, 409/400/404).
+      Проверено HTTP-запросами.
+- [x] Этап 2. Eureka: регистрация hotel-service подтверждена (`/eureka/apps`, UP).
+- [x] Этап 3. booking-service: пользователи, JWT, Resource Server; hotel-service
+      Resource Server, `@PreAuthorize` + URL-правила, единые 401/403.
+      Проверено: register/auth/CRUD, USER→403 на админских, 401 без токена,
+      TTL=3600, токен booking-service принимается hotel-service.
+- [x] Этап 4. booking-service: бронирования, autoSelect через Feign,
+      проверка пересечений, `room_guards` + pessimistic lock, идемпотентность
+      по `requestId`, пагинация, владелец/ADMIN. Проверено HTTP + Eureka.
+- [ ] Этап 5. Сага + Feign + устойчивость.
+- [ ] Этап 6. Gateway.
+- [ ] Этап 7. Сквозные вещи и seed.
+- [ ] Этап 8. Тесты.
+- [ ] Этап 9. README/ADR/демо.
+
 ## 1. Что реально требуют (краткий конспект)
 
 ### Компоненты
