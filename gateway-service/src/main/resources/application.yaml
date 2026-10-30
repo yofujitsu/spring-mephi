@@ -4,18 +4,39 @@ spring:
   cloud:
     gateway:
       server:
-        webflux:
+        webmvc:
           routes:
-            - id: hotel-service
+            - id: hotel-service-hotels
               uri: lb://hotel-service
               predicates: [ "Path=/api/hotels/**" ]
+            - id: hotel-service-rooms
+              uri: lb://hotel-service
+              predicates: [ "Path=/api/rooms,/api/rooms/*" ]
             - id: booking-service
               uri: lb://booking-service
-              predicates: [ "Path=/api/bookings/**" ]
+              predicates: [ "Path=/user,/user/**,/booking,/booking/**,/bookings,/bookings/**" ]
+
 eureka:
   client:
-    enabled: true
     service-url:
       defaultZone: http://localhost:8761/eureka/
+  instance:
+    prefer-ip-address: true
+
+security:
+  jwt:
+    secret: ${JWT_SECRET:mephi-booking-super-secret-jwt-key-2026-very-long}
+
 server:
   port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+logging:
+  structured:
+    format:
+      console: ecs

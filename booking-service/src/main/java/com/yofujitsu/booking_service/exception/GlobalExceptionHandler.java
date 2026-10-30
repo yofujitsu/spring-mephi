@@ -46,6 +46,12 @@ public class GlobalExceptionHandler {
         return build(HttpStatus.FORBIDDEN, "Access is denied", request);
     }
 
+    @ExceptionHandler({ServiceUnavailableException.class, HotelUnavailableException.class})
+    public ResponseEntity<ErrorDto> handleServiceUnavailable(
+            RuntimeException exception, HttpServletRequest request) {
+        return build(HttpStatus.SERVICE_UNAVAILABLE, exception.getMessage(), request);
+    }
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorDto> handleValidation(
             MethodArgumentNotValidException exception, HttpServletRequest request) {

@@ -22,9 +22,15 @@
 - [x] Этап 4. booking-service: бронирования, autoSelect через Feign,
       проверка пересечений, `room_guards` + pessimistic lock, идемпотентность
       по `requestId`, пагинация, владелец/ADMIN. Проверено HTTP + Eureka.
-- [ ] Этап 5. Сага + Feign + устойчивость.
-- [ ] Этап 6. Gateway.
-- [ ] Этап 7. Сквозные вещи и seed.
+- [x] Этап 5. Сага + Feign + устойчивость: PENDING→confirm→CONFIRMED,
+      компенсация release→CANCELLED, retry/backoff, Resilience4j, timeout Feign.
+      Проверено: успех, 409 + CANCELLED, идемпотентный повтор, отмена/rebook.
+- [x] Этап 6. Gateway: MVC-маршруты `lb://`, JWT на входе, единые 401/403,
+      CORS, `X-Request-Id`/MDC. Проверено: маршруты 200/201, INTERNAL 404,
+      без токена 401, stats USER→403, CORS preflight 200.
+- [x] Этап 7. Сквозные вещи и seed: springdoc + Bearer в hotel/booking,
+      seed 3 отеля / 5 номеров, admin/admin123 и user/user123, Actuator,
+      структурные JSON-логи (ECS). Swagger и openapi отдают 200.
 - [ ] Этап 8. Тесты.
 - [ ] Этап 9. README/ADR/демо.
 
