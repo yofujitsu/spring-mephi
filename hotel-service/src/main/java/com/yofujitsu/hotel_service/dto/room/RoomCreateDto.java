@@ -9,5 +9,9 @@ import java.util.UUID;
 /**
  * DTO for {@link Room}
  */
-public record RoomCreateDto(@NotNull UUID hotelId, Room.AvailableStatus available) {
+public record RoomCreateDto(
+        @NotNull UUID hotelId,
+        @NotNull @Positive Integer number,
+        Room.AvailableStatus available
+) {
 }

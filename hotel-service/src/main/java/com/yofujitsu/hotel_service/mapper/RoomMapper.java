@@ -1,24 +1,22 @@
 package com.yofujitsu.hotel_service.mapper;
 
-import com.yofujitsu.hotel_service.dto.hotel.HotelCreateDto;
-import com.yofujitsu.hotel_service.dto.hotel.HotelDto;
 import com.yofujitsu.hotel_service.dto.room.RoomCreateDto;
 import com.yofujitsu.hotel_service.dto.room.RoomDto;
-import com.yofujitsu.hotel_service.entity.Hotel;
 import com.yofujitsu.hotel_service.entity.Room;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
+import org.mapstruct.MappingConstants;
 
-@Mapper
-public class RoomMapper {
-    @Mapping(target = "", source = "")
-    public Room toEntity(RoomCreateDto roomCreateDto) {
-        return new Room();
-    }
+import java.util.List;
 
-    @Mapping(target = "", source = "")
-    public RoomDto toDto(Room room) {
-        return new RoomDto(room.getId(), room.getHotelId(), room.getNumber(),
-                room.getAvailable(), room.getTimesBooked());
-    }
+@Mapper(componentModel = MappingConstants.ComponentModel.SPRING)
+public interface RoomMapper {
+
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "timesBooked", ignore = true)
+    Room toEntity(RoomCreateDto roomCreateDto);
+
+    RoomDto toDto(Room room);
+
+    List<RoomDto> toDtos(List<Room> rooms);
 }
