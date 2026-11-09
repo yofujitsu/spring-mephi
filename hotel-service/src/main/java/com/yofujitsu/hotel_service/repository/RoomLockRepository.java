@@ -15,10 +15,13 @@ public interface RoomLockRepository extends JpaRepository<RoomLock, UUID> {
 
     Optional<RoomLock> findByBookingId(UUID bookingId);
 
+    boolean existsByRoomIdInAndReleasedFalse(Collection<UUID> roomIds);
+
     @Query("""
             select count(l) > 0
             from RoomLock l
             where l.roomId = :roomId
+              and l.released = false
               and l.startDate < :endDate
               and l.endDate > :startDate
             """)
@@ -26,10 +29,6 @@ public interface RoomLockRepository extends JpaRepository<RoomLock, UUID> {
             @Param("roomId") UUID roomId,
             @Param("startDate") LocalDate startDate,
             @Param("endDate") LocalDate endDate);
-
-    @Modifying
-    @Query("delete from RoomLock l where l.bookingId = :bookingId")
-    int deleteByBookingId(@Param("bookingId") UUID bookingId);
 
     @Modifying
     @Query("delete from RoomLock l where l.roomId = :roomId")

@@ -46,10 +46,10 @@ public class RoomLock {
     @Column(name = "booking_id", nullable = false)
     private UUID bookingId;
 
-    @Column(name = "start_date", nullable = false)
+    @Column(name = "start_date")
     private LocalDate startDate;
 
-    @Column(name = "end_date", nullable = false)
+    @Column(name = "end_date")
     private LocalDate endDate;
 
     @Column(name = "request_id")
@@ -57,4 +57,7 @@ public class RoomLock {
 
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
+
+    @Column(nullable = false)
+    private boolean released;
 }

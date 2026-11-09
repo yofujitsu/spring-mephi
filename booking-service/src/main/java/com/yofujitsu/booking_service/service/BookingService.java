@@ -3,7 +3,6 @@ package com.yofujitsu.booking_service.service;
 import com.yofujitsu.booking_service.dto.booking.BookingDto;
 import com.yofujitsu.booking_service.dto.booking.CreateBookingRequest;
 import com.yofujitsu.booking_service.dto.common.PageResponse;
-import com.yofujitsu.booking_service.entity.BookingStatus;
 import com.yofujitsu.booking_service.exception.ConflictException;
 import com.yofujitsu.booking_service.exception.HotelUnavailableException;
 import com.yofujitsu.booking_service.exception.ResourceNotFoundException;
@@ -13,6 +12,7 @@ import com.yofujitsu.booking_service.exception.ServiceUnavailableException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.scheduling.annotation.Scheduled;
 
 import java.util.UUID;
 
@@ -25,8 +25,9 @@ public class BookingService {
     private final SagaService sagaService;
 
     public BookingDto create(UUID userId, CreateBookingRequest request) {
-        BookingDto pending = bookingPersistence.createPending(userId, request);
-        if (pending.status() != BookingStatus.PENDING) {
+        var creation = bookingPersistence.createPending(userId, request);
+        BookingDto pending = creation.booking();
+        if (!creation.created()) {
             return pending;
         }
 
@@ -71,9 +72,16 @@ public class BookingService {
     private void releaseBestEffort(BookingDto booking) {
         try {
             sagaService.release(booking);
+            bookingPersistence.markReleased(booking.id());
         } catch (RuntimeException exception) {
             log.error("Failed to release room lock for booking {}", booking.id(), exception);
         }
+    }
+
+    @Scheduled(fixedDelayString = "${app.compensation.delay:10000}",
+            initialDelayString = "${app.compensation.delay:10000}")
+    public void retryCompensations() {
+        bookingPersistence.pendingReleases().forEach(this::releaseBestEffort);
     }
 
     private RuntimeException translate(RuntimeException exception) {

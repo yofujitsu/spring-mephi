@@ -23,6 +23,15 @@ public class JwtService {
     private final JwtEncoder jwtEncoder;
     private final JwtProperties jwtProperties;
 
+    public String issueServiceToken() {
+        Instant now = Instant.now();
+        JwtClaimsSet claims = JwtClaimsSet.builder().issuer(ISSUER).subject(ISSUER)
+                .issuedAt(now).expiresAt(now.plusSeconds(60))
+                .claim("roles", List.of("INTERNAL")).build();
+        return jwtEncoder.encode(JwtEncoderParameters.from(
+                JwsHeader.with(MacAlgorithm.HS256).build(), claims)).getTokenValue();
+    }
+
     public TokenResponse issueToken(User user) {
         Instant issuedAt = Instant.now();
         Instant expiresAt = issuedAt.plus(jwtProperties.expiration());
