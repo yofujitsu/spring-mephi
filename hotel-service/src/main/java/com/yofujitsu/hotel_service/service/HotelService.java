@@ -8,6 +8,7 @@ import com.yofujitsu.hotel_service.dto.room.RoomDto;
 import com.yofujitsu.hotel_service.entity.Hotel;
 import com.yofujitsu.hotel_service.entity.Room;
 import com.yofujitsu.hotel_service.exception.ResourceNotFoundException;
+import com.yofujitsu.hotel_service.exception.ConflictException;
 import com.yofujitsu.hotel_service.mapper.HotelMapper;
 import com.yofujitsu.hotel_service.mapper.RoomMapper;
 import com.yofujitsu.hotel_service.repository.HotelRepository;
@@ -88,11 +89,14 @@ public class HotelService {
     @Transactional
     public void deleteHotel(UUID id) {
         Hotel hotel = getHotelOrThrow(id);
-        List<UUID> roomIds = roomRepository.findAllByHotelId(id).stream()
+        List<UUID> roomIds = roomRepository.findAllByHotelIdForUpdate(id).stream()
                 .map(Room::getId)
                 .toList();
 
         if (!roomIds.isEmpty()) {
+            if (roomLockRepository.existsByRoomIdInAndReleasedFalse(roomIds)) {
+                throw new ConflictException("Hotel has active bookings: " + id);
+            }
             roomLockRepository.deleteByRoomIdIn(roomIds);
             roomRepository.deleteAllByHotelId(id);
         }

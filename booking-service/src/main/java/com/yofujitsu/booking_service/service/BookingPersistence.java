@@ -12,6 +12,7 @@ import com.yofujitsu.booking_service.exception.ResourceNotFoundException;
 import com.yofujitsu.booking_service.exception.ServiceUnavailableException;
 import com.yofujitsu.booking_service.mapper.BookingMapper;
 import com.yofujitsu.booking_service.repository.BookingRepository;
+import com.yofujitsu.booking_service.repository.UserRepository;
 import feign.FeignException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -39,10 +40,14 @@ public class BookingPersistence {
     private final RoomGuardService roomGuardService;
     private final BookingMapper bookingMapper;
     private final HotelClient hotelClient;
+    private final UserRepository userRepository;
+
+    public record PendingBooking(BookingDto booking, boolean created) { }
 
     @Transactional
-    public BookingDto createPending(UUID userId, CreateBookingRequest request) {
-        validatePeriod(request.startDate(), request.endDate());
+    public PendingBooking createPending(UUID userId, CreateBookingRequest request) {
+        userRepository.findByIdForUpdate(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
 
         Optional<Booking> existing = bookingRepository.findByRequestId(request.requestId());
         if (existing.isPresent()) {
@@ -52,8 +57,17 @@ public class BookingPersistence {
             }
             log.info("Booking creation is idempotent: requestId={}, bookingId={}",
                     request.requestId(), existing.get().getId());
-            return bookingMapper.toDto(existing.get());
+            Booking booking = existing.get();
+            if (!booking.getStartDate().equals(request.startDate())
+                    || !booking.getEndDate().equals(request.endDate())
+                    || (!request.autoSelect() && !booking.getRoomId().equals(request.roomId()))
+                    || (request.hotelId() != null && !booking.getHotelId().equals(request.hotelId()))) {
+                throw new ConflictException("requestId is already used for a different booking");
+            }
+            return new PendingBooking(bookingMapper.toDto(booking), false);
         }
+
+        validatePeriod(request.startDate(), request.endDate());
 
         HotelRoomDto room = request.autoSelect()
                 ? selectRoom(request)
@@ -74,12 +88,12 @@ public class BookingPersistence {
         log.info("Created PENDING booking {}: userId={}, roomId={}, period={}..{}",
                 booking.getId(), userId, room.id(),
                 request.startDate(), request.endDate());
-        return bookingMapper.toDto(booking);
+        return new PendingBooking(bookingMapper.toDto(booking), true);
     }
 
     @Transactional
     public BookingDto markConfirmed(UUID id) {
-        Booking booking = getBookingOrThrow(id);
+        Booking booking = lockBooking(id);
         if (booking.getStatus() == BookingStatus.CANCELLED) {
             throw new ConflictException("Booking is already cancelled: " + id);
         }
@@ -90,9 +104,10 @@ public class BookingPersistence {
 
     @Transactional
     public BookingDto markCancelled(UUID id) {
-        Booking booking = getBookingOrThrow(id);
+        Booking booking = lockBooking(id);
         if (booking.getStatus() != BookingStatus.CANCELLED) {
             booking.setStatus(BookingStatus.CANCELLED);
+            booking.setReleasePending(true);
             log.info("Booking {} is CANCELLED", id);
         }
         return bookingMapper.toDto(booking);
@@ -120,14 +135,30 @@ public class BookingPersistence {
 
     @Transactional
     public BookingDto cancel(UUID id, UUID userId, boolean admin) {
-        Booking booking = getBookingOrThrow(id);
+        Booking booking = lockBooking(id);
         ensureOwnerOrAdmin(booking, userId, admin);
 
         if (booking.getStatus() != BookingStatus.CANCELLED) {
             booking.setStatus(BookingStatus.CANCELLED);
+            booking.setReleasePending(true);
             log.info("Cancelled booking {}: userId={}", id, userId);
         }
         return bookingMapper.toDto(booking);
+    }
+
+    @Transactional(readOnly = true)
+    public List<BookingDto> pendingReleases() {
+        return bookingRepository.findByReleasePendingTrue().stream().map(bookingMapper::toDto).toList();
+    }
+
+    @Transactional
+    public void markReleased(UUID id) {
+        lockBooking(id).setReleasePending(false);
+    }
+
+    private Booking lockBooking(UUID id) {
+        return bookingRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found: " + id));
     }
 
     private HotelRoomDto resolveExplicitRoom(CreateBookingRequest request) {

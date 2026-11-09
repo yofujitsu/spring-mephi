@@ -18,6 +18,10 @@ public interface RoomRepository extends JpaRepository<Room, UUID> {
 
     List<Room> findAllByHotelId(UUID hotelId);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select r from Room r where r.hotelId = :hotelId order by r.id")
+    List<Room> findAllByHotelIdForUpdate(@Param("hotelId") UUID hotelId);
+
     List<Room> findAllByHotelId(UUID hotelId, Sort sort);
 
     List<Room> findAllByHotelIdIn(Collection<UUID> hotelIds);

@@ -84,7 +84,7 @@ public class RoomController {
     }
 
     @PostMapping("/{id}/confirm-availability")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('INTERNAL')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void confirmAvailability(
             @PathVariable UUID id,
@@ -93,7 +93,7 @@ public class RoomController {
     }
 
     @PostMapping("/{id}/release")
-    @PreAuthorize("isAuthenticated()")
+    @PreAuthorize("hasRole('INTERNAL')")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void release(
             @PathVariable UUID id,

@@ -79,7 +79,7 @@ public class RoomService {
 
     @Transactional
     public RoomDto updateRoom(UUID id, RoomUpdateDto roomUpdateDto) {
-        Room room = getRoomOrThrow(id);
+        Room room = lockRoom(id);
 
         if (roomUpdateDto.number() != null
                 && !roomUpdateDto.number().equals(room.getNumber())) {
@@ -100,7 +100,10 @@ public class RoomService {
 
     @Transactional
     public void deleteRoom(UUID id) {
-        Room room = getRoomOrThrow(id);
+        Room room = lockRoom(id);
+        if (roomLockRepository.existsByRoomIdInAndReleasedFalse(List.of(id))) {
+            throw new ConflictException("Room has active bookings: " + id);
+        }
         roomLockRepository.deleteByRoomId(id);
         roomRepository.delete(room);
         log.info("Deleted room {}", id);
@@ -121,6 +124,11 @@ public class RoomService {
 
     private Room getRoomOrThrow(UUID id) {
         return roomRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Room not found: " + id));
+    }
+
+    private Room lockRoom(UUID id) {
+        return roomRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Room not found: " + id));
     }
 }
